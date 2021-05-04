@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src='waxjs.js'></script>
+</head>
+
+<select name = "drop" id = "myID">
+      <option value="items">Login to see items</option>
+</select>
+	<button onclick="setItem('item1')">Set Item 1 </button>
+	<button onclick="setItem('item2')">Set Item 2 </button>
+	<button onclick="setItem('item3')">Set Item 3 </button>
+	
+        
+<button class="btn btn-primary btn-lg" id="login" onclick=login() >WAX Login</button>
+<button id="sign" class="btn btn-primary btn-lg" onclick=sign() >Sign transaction</button>
+
+</html>
+
+
+	<script>
+	
+	// DEFINE VARIABLES:
+	let item1, item2, item3;
+	      	let dropdown = document.getElementById('myID');
+let defaultOption = document.createElement('option');
+
+//BUTTON CODE:
+
+function setItem(item) {
+ switch (item)
+	{
+	 case "item1":
+		item1 = dropdown.value;
+		console.log("Item1: " + item1);
+		break;
+	 case "item2":
+		item2 = dropdown.value;
+		console.log("Item2: " + item2);
+		break;
+	 case "item3":
+		item3 = dropdown.value;
+		console.log("Item3: " + item3);
+		break;
+	 default:
+		alert("error");
+	}
+}
+
+        
+        // CODE FOR WAX LOGIN:
+  const wax = new waxjs.WaxJS('https://wax.greymass.com');
+  // const wax = new waxjs.WaxJS('http://localhost:8888', null, null, true, null, 'http://all-access.wax.test:8113', 'http://api-idm.wax.test/v1/accounts/auto-accept/');
+
+  async function login() {
+    try {
+      const userAccount = await wax.login();
+
+
+dropdown.add(defaultOption);
+dropdown.selectedIndex = 0;
+
+const url = 'https://wax.api.atomicassets.io/atomicassets/v1/assets?owner=' + userAccount + '&collection_name=alien.worlds&schema_name=tool.worlds&page=1&limit=100&order=desc&sort=asset_id';
+
+const request = new XMLHttpRequest();
+request.open('GET', url, true);
+
+request.onload = function() {
+  if (request.status === 200) {
+    const data = JSON.parse(request.responseText);
+    let option;
+
+    for (let i = 0; i < data.data.length; i++) {
+	  console.log(data.data[i]);
+      option = document.createElement('option');
+      option.text = data.data[i].name;
+      option.value = data.data[i].asset_id;
+      dropdown.add(option);
+    }
+   } else {
+    // Reached the server, but it returned an error
+	alert("ERROR");
+  }   
+}
+
+request.onerror = function() {
+  console.error('An error occurred fetching the JSON from ' + url);
+};
+
+request.send();
+
+    } catch(e) {
+      alert(e.message);
+    }
+  }
+
+  async function sign() {
+    if(!wax.api) {
+      alert ("LOGIN FIRST! ");
+    }
+else {
+  try {
+    const result = await wax.api.transact({
+    actions: [{
+    account: 'm.federation',
+    name: 'setbag',
+    authorization: [{
+      actor: wax.userAccount,
+      permission: 'active',
+    }],
+    data: {
+      account: wax.userAccount,
+      items: [
+             item1,
+             item2,
+             item3
+            ]
+    }
+  }]
+}, {
+  blocksBehind: 3,
+  expireSeconds: 30,
+});
+  }
+  catch (e)
+  {
+    document.getElementById('response').append(e.message);
+  }
+  }
+}
+</script>
